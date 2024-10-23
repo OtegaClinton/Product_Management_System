@@ -7,38 +7,58 @@ exports.createProduct = async (req, res) => {
     try {
         const { name, description, price, category, quantity } = req.body;
 
+        // Validate product name
         if (!name || typeof name !== 'string' || name.trim() === '') {
             return res.status(400).json({ message: 'Product name is required and must be a non-empty string.' });
         }
 
-        if (description && typeof description !== 'string') {
-            return res.status(400).json({ message: 'Description must be a string if provided.' });
+        // Validate description
+        if (!description || typeof description !== 'string' || description.trim() === '') {
+            return res.status(400).json({ message: 'Description is required and must be a non-empty string.' });
         }
 
+        // Check if the product with the same name and description already exists
+        const existingProduct = await productModel.findOne({ 
+            name: name.trim(), 
+            description: description.trim() 
+        });
+
+        if (existingProduct) {
+            return res.status(400).json({ message: 'Product with the same name and description already exists.' });
+        }
+
+        // Validate price
         if (typeof price !== 'number' || price < 0) {
             return res.status(400).json({ message: 'Price must be a positive number.' });
         }
 
+        // Validate category
         if (!category || typeof category !== 'string' || category.trim() === '') {
             return res.status(400).json({ message: 'Category is required and must be a non-empty string.' });
         }
 
+        // Validate quantity
         if (typeof quantity !== 'number' || quantity < 0 || !Number.isInteger(quantity)) {
             return res.status(400).json({ message: 'Quantity must be a non-negative integer.' });
         }
 
         // Create and save the new product if all validations pass
-        const newProduct = new productModel({ name, description, price, category, quantity });
+        const newProduct = new productModel({ 
+            name: name.trim(), 
+            description: description.trim(), 
+            price, 
+            category, 
+            quantity 
+        });
+
         const savedProduct = await newProduct.save();
-        
+
         res.status(201).json({
-            message: `New product created successfully`,
+            message: 'New product created successfully.',
             data: savedProduct
         });
     } catch (error) {
-        res.status(400).json({
-            message: error.message
-        });
+        res.status(400).json({ message: error.message });
     }
 };
 
